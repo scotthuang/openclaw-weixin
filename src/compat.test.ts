@@ -55,15 +55,15 @@ describe("isHostVersionSupported", () => {
   });
 
   it("rejects the day before the minimum", () => {
-    expect(isHostVersionSupported("2026.5.11")).toBe(false);
+    expect(isHostVersionSupported("2026.7.31")).toBe(false);
   });
 
   it("accepts a version above the minimum", () => {
-    expect(isHostVersionSupported("2026.5.13")).toBe(true);
+    expect(isHostVersionSupported("2026.8.2")).toBe(true);
   });
 
   it("accepts a future version", () => {
-    expect(isHostVersionSupported("2026.6.0")).toBe(true);
+    expect(isHostVersionSupported("2026.9.0")).toBe(true);
     expect(isHostVersionSupported("2027.1.1")).toBe(true);
   });
 
@@ -74,7 +74,7 @@ describe("isHostVersionSupported", () => {
 
 describe("assertHostCompatibility", () => {
   it("does not throw for a supported version", () => {
-    expect(() => assertHostCompatibility("2026.5.12")).not.toThrow();
+    expect(() => assertHostCompatibility("2026.8.1")).not.toThrow();
   });
 
   it("does not throw when version is undefined (graceful skip)", () => {

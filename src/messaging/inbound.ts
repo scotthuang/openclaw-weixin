@@ -139,6 +139,7 @@ function generateMessageSid(): string {
 export type WeixinMsgContext = {
   Body: string;
   From: string;
+  SenderId: string;
   To: string;
   AccountId: string;
   OriginatingChannel: "openclaw-weixin";
@@ -172,6 +173,7 @@ export type WeixinMsgContext = {
   CommandBody?: string;
   /** Whether the sender is authorized to execute slash commands. */
   CommandAuthorized?: boolean;
+  CommandInterpretationSuppressed?: boolean;
 };
 
 /** Returns true if the message item is a media type (image, video, file, or voice). */
@@ -256,6 +258,7 @@ export function weixinMessageToMsgContext(
   const ctx: WeixinMsgContext = {
     Body: bodyFromItemList(msg.item_list),
     From: from_user_id,
+    SenderId: from_user_id,
     To: from_user_id,
     AccountId: accountId,
     OriginatingChannel: "openclaw-weixin",

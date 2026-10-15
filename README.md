@@ -22,10 +22,10 @@ OpenClaw's Weixin channel plugin. Connect an OpenClaw Gateway to Weixin with QR-
 | Component | Requirement |
 | --- | --- |
 | Node.js | `>=22.13.0` |
-| OpenClaw runtime check | `>=2026.3.22` |
-| npm peer dependency | `>=2026.5.12` |
+| OpenClaw runtime check | `>=2026.8.1` |
+| npm peer dependency | `>=2026.8.1` |
 
-Use OpenClaw `>=2026.5.12` when possible. The runtime guard currently accepts `>=2026.3.22`; npm installations using strict peer-dependency validation require the peer-dependency version.
+OpenClaw `>=2026.8.1` is required for turn-adoption callbacks, scoped attachment tools, and command suppression on attachment completion events.
 
 OpenClaw must be installed and the `openclaw` CLI must be available. See the [OpenClaw installation guide](https://docs.openclaw.ai/install).
 
@@ -67,6 +67,16 @@ Scan the QR code with Weixin and confirm the authorization. Credentials are stor
 openclaw gateway restart
 openclaw channels status
 ```
+
+## Background attachments (scotthuang maintenance branch)
+
+Incoming attachments download in the background. The initial message tells the agent which file is pending; later text can reach Core without waiting for that download or the previous model reply. Core remains responsible for conversation scheduling, so this does not promise an immediate model interruption.
+
+The read-only `weixin_attachment_status` tool reports tasks belonging to the current Weixin account, sender, agent, and session. If you restrict tools with an allowlist, allow this tool to enable live progress queries. Byte counts describe the current network transfer attempt before AES decryption; a percentage is available only when the response supplies a usable total size. A ready notification includes the downloaded, decrypted, saved attachment and refers back to the original message. Completion events cannot execute slash commands.
+
+Downloads have a 120-second response-header deadline, a 30-second no-data deadline, and at most three attempts for transient failures. Healthy transfers are not cut off by a fixed whole-file timeout. Each account allows two simultaneous downloads and 32 unfinished tasks; excess attachments fail explicitly while text continues. Attachments are limited to 100 MiB of plaintext.
+
+Task state is held in memory, with at most 256 records and a one-hour retention for finished tasks. Gateway stop/restart cancels unfinished tasks; resend an attachment to start again. Authorized `/stop`, `/new`, and `/reset` cancel this conversation's pending attachments and suppress their delayed completion events. This change does not add durable inbound replay or recovery after a crash.
 
 ## Configuration
 
