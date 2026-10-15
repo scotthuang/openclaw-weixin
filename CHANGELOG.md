@@ -6,6 +6,16 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/) format.
 
 ## [Unreleased]
 
+## [2.4.10-scotthuang.1] - 2026-10-16
+
+### Fixed
+
+- **Weixin outbound routes and delivery targets:** Include [Tencent/openclaw-weixin#269](https://github.com/Tencent/openclaw-weixin/pull/269) at `1f14accf953f451f19850a3b05c5d34964963005` to normalize supported direct-recipient wrappers for routing, context lookup, and text/media delivery while preserving recipient case.
+
+### Maintenance baseline
+
+- First scotthuang maintenance build, based on official `main` at `874637a0dbc24050f72d1385add4fc6170a2d726` (2.4.10). Attachment downloading and polling retain the upstream behavior.
+
 ## [2.4.10] - 2026-10-10
 
 ### 修复
