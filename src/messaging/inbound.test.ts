@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
+  applyVisibleQuoteContext,
   getContextTokenFromMsgContext,
   getWeixinMessageId,
   isMediaItem,
@@ -303,6 +304,103 @@ describe("weixinMessageToMsgContext", () => {
     );
     expect(ctx.MessageSidFull).toBe("18446744073709551615");
     expect(ctx.MessageSid).not.toBe(ctx.MessageSidFull);
+  });
+});
+
+describe("visible quote context", () => {
+  function quotedContext(body: string, reply = "my question"): WeixinMsgContext {
+    return weixinMessageToMsgContext(
+      {
+        from_user_id: "user",
+        item_list: [
+          {
+            type: MessageItemType.TEXT,
+            text_item: { text: reply },
+            ref_msg: {
+              svr_id: "original-id",
+              message_item: { type: MessageItemType.TEXT, text_item: { text: body } },
+            },
+          },
+        ],
+      },
+      "account",
+    );
+  }
+
+  it("moves the quote into one visible block while retaining reply identity and command text", () => {
+    const ctx = quotedContext("first line\n\nlast line", "/new");
+    ctx.CommandBody = "/new";
+    ctx.ReplyToQuoteText = "first line";
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toBe("/new\n\n> **引用的微信消息**\n>\n> first line\n> \n> last line");
+    expect(ctx.CommandBody).toBe("/new");
+    expect(ctx.BodyForAgent).toBe(ctx.Body);
+    expect(ctx.ReplyToId).toBe("original-id");
+    expect(ctx.ReplyToIsQuote).toBe(true);
+    expect(ctx.ReplyToBody).toBeUndefined();
+    expect(ctx.ReplyToQuoteText).toBeUndefined();
+  });
+
+  it("leaves a message with no quote unchanged", () => {
+    const ctx = weixinMessageToMsgContext(
+      {
+        from_user_id: "user",
+        item_list: [{ type: MessageItemType.TEXT, text_item: { text: "hi" } }],
+      },
+      "account",
+    );
+    const original = structuredClone(ctx);
+    applyVisibleQuoteContext(ctx);
+    expect(ctx).toEqual(original);
+  });
+
+  it("preserves the full 2000-character budget", () => {
+    const text = "中".repeat(2000);
+    const ctx = quotedContext(text);
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toContain(`my question\n\n> **引用的微信消息**\n>\n> ${text}`);
+    expect(ctx.Body).not.toContain("omitted");
+  });
+
+  it("retains the head and tail with a visible omission marker once over budget", () => {
+    const ctx = quotedContext("开".repeat(1193) + "omitted middle" + "尾".repeat(796));
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toBe(
+      `my question\n\n> **引用的微信消息**\n>\n> ${"开".repeat(1193)}…\\[omitted\\]…${"尾".repeat(796)}`,
+    );
+    expect(ctx.Body).not.toContain("omitted middle");
+  });
+
+  it("does not split an emoji at either truncation boundary", () => {
+    const ctx = quotedContext("a".repeat(1192) + "😀" + "x".repeat(1000) + "😀" + "z".repeat(795));
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toContain(`${"a".repeat(1192)}…\\[omitted\\]…${"z".repeat(795)}`);
+    expect(ctx.Body.isWellFormed()).toBe(true);
+  });
+
+  it("quotes literal Markdown and HTML instead of enabling images or collapsible content", () => {
+    const ctx = quotedContext(
+      "![image](https://example.invalid/a)\r\n<details>\r```\n&copy;\u0000",
+    );
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toBe(
+      "my question\n\n> **引用的微信消息**\n>\n> \\!\\[image\\]\\(https://example\\.invalid/a\\)\n> \\<details\\>\n> \\`\\`\\`\n> \\&copy;",
+    );
+    expect(ctx.Body).not.toContain("\r");
+    expect(ctx.Body).not.toContain("\u0000");
+  });
+
+  it.each([undefined, "", " \u0000\r\n"])("marks an unavailable quote (%s)", (body) => {
+    const ctx = quotedContext("");
+    ctx.ReplyToBody = body;
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toContain("> \\[引用消息内容不可用\\]");
+  });
+
+  it("keeps a quote-only message visible without inventing a current question", () => {
+    const ctx = quotedContext("original", "");
+    applyVisibleQuoteContext(ctx);
+    expect(ctx.Body).toBe("> **引用的微信消息**\n>\n> original");
   });
 });
 

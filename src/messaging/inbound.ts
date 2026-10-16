@@ -138,7 +138,10 @@ function generateMessageSid(): string {
 /** Inbound context passed to the OpenClaw core pipeline (matches MsgContext shape). */
 export type WeixinMsgContext = {
   Body: string;
+  /** Visible quoted body also supplied to the model, independently of CommandBody. */
+  BodyForAgent?: string;
   From: string;
+  SenderId: string;
   To: string;
   AccountId: string;
   OriginatingChannel: "openclaw-weixin";
@@ -172,6 +175,7 @@ export type WeixinMsgContext = {
   CommandBody?: string;
   /** Whether the sender is authorized to execute slash commands. */
   CommandAuthorized?: boolean;
+  CommandInterpretationSuppressed?: boolean;
 };
 
 /** Returns true if the message item is a media type (image, video, file, or voice). */
@@ -256,6 +260,7 @@ export function weixinMessageToMsgContext(
   const ctx: WeixinMsgContext = {
     Body: bodyFromItemList(msg.item_list),
     From: from_user_id,
+    SenderId: from_user_id,
     To: from_user_id,
     AccountId: accountId,
     OriginatingChannel: "openclaw-weixin",
@@ -332,6 +337,53 @@ function expiredMediaLabel(mime?: string, name?: string): string {
         ? "语音"
         : "附件";
   return name ? `[引用的${kind}已过期: ${name}]` : `[引用的${kind}已过期]`;
+}
+
+// Match Core's ReplyToBody budget and head/tail selection before moving the text
+// into the visible body. The budget counts UTF-16 units, not model tokens.
+const MAX_VISIBLE_QUOTE_CHARS = 2_000;
+const QUOTE_OMISSION_MARKER = "…[omitted]…";
+
+function splitsSurrogatePair(text: string, index: number): boolean {
+  const before = text.charCodeAt(index - 1);
+  const after = text.charCodeAt(index);
+  return before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff;
+}
+
+function boundedQuoteBody(body: string): string {
+  if (body.length <= MAX_VISIBLE_QUOTE_CHARS) return body;
+  const available = MAX_VISIBLE_QUOTE_CHARS - QUOTE_OMISSION_MARKER.length;
+  let headEnd = Math.floor(available * 0.6);
+  let tailStart = body.length - (available - headEnd);
+  if (splitsSurrogatePair(body, headEnd)) headEnd--;
+  if (splitsSurrogatePair(body, tailStart)) tailStart++;
+  return `${body.slice(0, headEnd)}${QUOTE_OMISSION_MARKER}${body.slice(tailStart)}`;
+}
+
+/** Call after quote resolution and caching the current message, before Core finalization. */
+export function applyVisibleQuoteContext(ctx: WeixinMsgContext): void {
+  if (!ctx.ReplyToIsQuote) return;
+  // Weixin's existing Core path uses ReplyToBody, including when a partial quote
+  // was resolved. Keep that selection so this presentation change retains context.
+  const body = (ctx.ReplyToBody ?? "").replaceAll("\u0000", "").replace(/\r\n?/g, "\n");
+  const quote = boundedQuoteBody(body.trim() ? body : "[引用消息内容不可用]");
+  // Render the original characters as text: quoted images, HTML/details and
+  // Markdown delimiters must not load content, hide the quote or alter its layout.
+  const escaped = quote.replace(/[\\`*_{}[\]()#+\-.!<>|~&$]/g, "\\$&");
+  const block = [
+    "> **引用的微信消息**",
+    ">",
+    ...escaped.split("\n").map((line) => `> ${line}`),
+  ].join("\n");
+  // Keep the user's current request visible when the UI collapses long messages.
+  ctx.Body = ctx.Body ? `${ctx.Body}\n\n${block}` : block;
+  // Core can otherwise derive agentText from the raw CommandBody and omit the
+  // quote. Keep the display/model body explicit without changing command parsing.
+  ctx.BodyForAgent = ctx.Body;
+  // The same text now reaches both the transcript and the model through Body.
+  // Preserve the provider reply ID and media, but prevent duplicate hidden text.
+  delete ctx.ReplyToBody;
+  delete ctx.ReplyToQuoteText;
 }
 
 /** Resolve an ID-only quote after sender authorization has succeeded. */

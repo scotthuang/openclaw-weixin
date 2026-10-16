@@ -4,6 +4,17 @@
   "channels": [
     "openclaw-weixin"
   ],
+  "contracts": {
+    "tools": [
+      "weixin_attachment_status"
+    ]
+  },
+  "toolMetadata": {
+    "weixin_attachment_status": {
+      "replaySafe": true,
+      "sideEffecting": false
+    }
+  },
   "channelConfigs": {
     "openclaw-weixin": {
       "schema": {

@@ -37,7 +37,7 @@
     "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "openclaw": ">=2026.5.12"
+    "openclaw": ">=2026.8.1"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.1.0",
@@ -67,7 +67,7 @@
     "install": {
       "npmSpec": "@tencent-weixin/openclaw-weixin",
       "defaultChoice": "npm",
-      "minHostVersion": ">=2026.5.12"
+      "minHostVersion": ">=2026.8.1"
     }
   },
   "ilink_appid": "bot"

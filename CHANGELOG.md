@@ -6,6 +6,16 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/) format.
 
 ## [Unreleased]
 
+### Added
+
+- Background attachment tasks: keep polling and admitting later text while files download; publish pending metadata, a conversation-scoped read-only `weixin_attachment_status` tool, and separate ready/failed events tied to the original message.
+- Bounded attachment workers, transient retries, response-header and no-data deadlines, byte progress, cancellation, and explicit terminal errors. Ready means download, decryption, and saving have all succeeded.
+
+### Changed
+
+- Require OpenClaw `>=2026.8.1` for the tested turn-adoption and command-suppression APIs. Sender authorization now precedes attachment downloads. Core owns model scheduling after adoption; plugin preparation remains ordered per sender.
+- Download tasks are in memory and are cancelled on account shutdown or authorized conversation reset/stop. This release does not add durable replay or restart recovery.
+
 ## [2.4.10-scotthuang.1] - 2026-10-16
 
 ### Fixed
