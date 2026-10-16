@@ -6,8 +6,11 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/) format.
 
 ## [Unreleased]
 
+## [2.4.10-scotthuang.2] - 2026-10-17
+
 ### Added
 
+- Visible Weixin quote blocks in OpenClaw chat history, sharing the same model context without duplicate hidden text. Preserve the 2,000 UTF-16 head/tail budget, original command input, quote cache, and media access; keep the current request first when long messages collapse.
 - Background attachment tasks: keep polling and admitting later text while files download; publish pending metadata, a conversation-scoped read-only `weixin_attachment_status` tool, and separate ready/failed events tied to the original message.
 - Bounded attachment workers, transient retries, response-header and no-data deadlines, byte progress, cancellation, and explicit terminal errors. Ready means download, decryption, and saving have all succeeded.
 
