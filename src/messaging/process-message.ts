@@ -31,6 +31,7 @@ import {
   getWeixinMessageId,
   isMediaItem,
   resolveStoredQuoteContext,
+  applyVisibleQuoteContext,
 } from "./inbound.js";
 import type { WeixinInboundMediaOpts } from "./inbound.js";
 import { sendWeixinMediaFile } from "./send-media.js";
@@ -347,6 +348,8 @@ export async function processOneMessage(
       );
     }
   }
+
+  applyVisibleQuoteContext(ctx);
 
   logger.debug(
     `resolveAgentRoute: agentId=${route.agentId ?? "(none)"} sessionKey=${route.sessionKey ?? "(none)"} mainSessionKey=${route.mainSessionKey ?? "(none)"}`,
