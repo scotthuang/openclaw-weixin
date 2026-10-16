@@ -375,8 +375,8 @@ export function applyVisibleQuoteContext(ctx: WeixinMsgContext): void {
     ">",
     ...escaped.split("\n").map((line) => `> ${line}`),
   ].join("\n");
-  // Keep the user's current request visible when the UI collapses long messages.
-  ctx.Body = ctx.Body ? `${ctx.Body}\n\n${block}` : block;
+  // Present the quoted context before the user's current request.
+  ctx.Body = ctx.Body ? `${block}\n\n${ctx.Body}` : block;
   // Core can otherwise derive agentText from the raw CommandBody and omit the
   // quote. Keep the display/model body explicit without changing command parsing.
   ctx.BodyForAgent = ctx.Body;

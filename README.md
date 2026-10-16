@@ -137,12 +137,12 @@ stores the required text and media metadata locally so later quotes can restore 
 context. The cache is enabled by default and failures do not interrupt normal message
 delivery.
 
-Quoted text appears as a Markdown blockquote below the current message in OpenClaw's
+Quoted text appears as a Markdown blockquote above the current message in OpenClaw's
 chat history. The same text supplies model context without a second hidden copy.
 Quotes retain up to 2,000 UTF-16 units; longer text keeps the beginning and end with
 an `…[omitted]…` marker. Cache misses and expired attachments are shown explicitly.
-The current request stays first when the UI collapses a long message. Existing chat
-history is not rewritten.
+Long messages use the UI's existing expansion control. Existing chat history is
+not rewritten.
 
 Configure it under `channels.openclaw-weixin.quoteCache` when you need different
 retention or size limits. The default limits are 30 days and 10,000 text records per

@@ -6,6 +6,12 @@ This project follows the [Keep a Changelog](https://keepachangelog.com/) format.
 
 ## [Unreleased]
 
+## [2.4.10-scotthuang.3] - 2026-10-17
+
+### Changed
+
+- Show the Weixin Markdown quote before the current message body, matching the requested reading order.
+
 ## [2.4.10-scotthuang.2] - 2026-10-17
 
 ### Added

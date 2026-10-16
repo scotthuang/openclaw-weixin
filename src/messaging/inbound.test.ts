@@ -332,7 +332,7 @@ describe("visible quote context", () => {
     ctx.CommandBody = "/new";
     ctx.ReplyToQuoteText = "first line";
     applyVisibleQuoteContext(ctx);
-    expect(ctx.Body).toBe("/new\n\n> **引用的微信消息**\n>\n> first line\n> \n> last line");
+    expect(ctx.Body).toBe("> **引用的微信消息**\n>\n> first line\n> \n> last line\n\n/new");
     expect(ctx.CommandBody).toBe("/new");
     expect(ctx.BodyForAgent).toBe(ctx.Body);
     expect(ctx.ReplyToId).toBe("original-id");
@@ -358,7 +358,7 @@ describe("visible quote context", () => {
     const text = "中".repeat(2000);
     const ctx = quotedContext(text);
     applyVisibleQuoteContext(ctx);
-    expect(ctx.Body).toContain(`my question\n\n> **引用的微信消息**\n>\n> ${text}`);
+    expect(ctx.Body).toContain(`> **引用的微信消息**\n>\n> ${text}\n\nmy question`);
     expect(ctx.Body).not.toContain("omitted");
   });
 
@@ -366,7 +366,7 @@ describe("visible quote context", () => {
     const ctx = quotedContext("开".repeat(1193) + "omitted middle" + "尾".repeat(796));
     applyVisibleQuoteContext(ctx);
     expect(ctx.Body).toBe(
-      `my question\n\n> **引用的微信消息**\n>\n> ${"开".repeat(1193)}…\\[omitted\\]…${"尾".repeat(796)}`,
+      `> **引用的微信消息**\n>\n> ${"开".repeat(1193)}…\\[omitted\\]…${"尾".repeat(796)}\n\nmy question`,
     );
     expect(ctx.Body).not.toContain("omitted middle");
   });
@@ -384,7 +384,7 @@ describe("visible quote context", () => {
     );
     applyVisibleQuoteContext(ctx);
     expect(ctx.Body).toBe(
-      "my question\n\n> **引用的微信消息**\n>\n> \\!\\[image\\]\\(https://example\\.invalid/a\\)\n> \\<details\\>\n> \\`\\`\\`\n> \\&copy;",
+      "> **引用的微信消息**\n>\n> \\!\\[image\\]\\(https://example\\.invalid/a\\)\n> \\<details\\>\n> \\`\\`\\`\n> \\&copy;\n\nmy question",
     );
     expect(ctx.Body).not.toContain("\r");
     expect(ctx.Body).not.toContain("\u0000");

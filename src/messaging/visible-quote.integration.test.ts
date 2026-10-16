@@ -135,7 +135,7 @@ describe("visible Weixin quotes through message admission", () => {
     await processOneMessage(message(question, "weixin-current-43", referenceId), deps);
     expect(contexts).toHaveLength(1);
     const ctx = contexts[0];
-    expect(ctx.Body).toBe(`${question}\n\n> **引用的微信消息**\n>\n> ${quoteToken}\n> /new`);
+    expect(ctx.Body).toBe(`> **引用的微信消息**\n>\n> ${quoteToken}\n> /new\n\n${question}`);
     expect(ctx).toMatchObject({
       ReplyToId: referenceId,
       ReplyToIsQuote: true,
@@ -166,7 +166,7 @@ describe("visible Weixin quotes through message admission", () => {
     expect(proof.transcriptText).toContain(ctx.Body);
 
     await processOneMessage(message("继续解释", "weixin-current-44", "weixin-current-43"), deps);
-    expect(contexts[1].Body).toBe(`继续解释\n\n> **引用的微信消息**\n>\n> ${question}`);
+    expect(contexts[1].Body).toBe(`> **引用的微信消息**\n>\n> ${question}\n\n继续解释`);
     expect(contexts[1].Body).not.toContain(quoteToken);
     expect(records.get("weixin-current-44")?.body).toBe("继续解释");
   }, 45_000);
@@ -182,7 +182,7 @@ describe("visible Weixin quotes through message admission", () => {
     });
     expect(contexts[0].CommandBody).toBe("/stop");
     expect(contexts[0].CommandAuthorized).toBe(true);
-    expect(contexts[0].Body).toMatch(/^\/stop\n\n> /);
+    expect(contexts[0].Body).toMatch(/\n\n\/stop$/);
 
     await processOneMessage(message("/echo current command", "weixin-echo", referenceId), deps);
     expect(mocked.send).toHaveBeenCalledWith(expect.objectContaining({ text: "current command" }));
